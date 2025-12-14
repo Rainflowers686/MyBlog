@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<!-- 顶部个人信息 Banner -->
+<div class="position-relative mb-5" style="margin-top: -30px;">
+    <div style="height: 250px; background: {% if user.blog_bg %}url('{{ user.blog_bg.url }}'){% else %}linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%){% endif %} center/cover; border-radius: 0 0 24px 24px;"></div>
+
+    <div class="container position-relative" style="margin-top: -80px;">
+        <div class="d-flex align-items-end">
+            <!-- 头像 -->
+            <div class="position-relative group">
+                <img id="avatarPreview"
+                     src="{% if user.avatar %}{{ user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}{% endif %}"
+                     class="rounded-circle border border-4 border-white shadow-lg bg-white"
+                     width="160" height="160" style="object-fit:cover; transition: 0.3s;">
+                <button class="btn btn-dark rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow"
+                        onclick="document.getElementById('avatarInput').click()" title="更换头像">
+                    <i class="fas fa-camera"></i>
+                </button>
+            </div>
+
+            <div class="ms-4 mb-3 text-shadow-sm d-none d-md-block">
+                <h2 class="fw-bold mb-1">{{ user.first_name|default:user.username }}</h2>
+                <p class="mb-0 opacity-75">{{ user.bio|default:"这个人很懒，什么都没写~" }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- 左侧设置卡片 -->
+        <div class="col-md-4 mb-4">
+            <div class="glass-card animate__animated animate__fadeInUp">
+                <h5 class="fw-bold mb-4 border-bottom pb-2"><i class="fas fa-cog text-primary"></i> 资料设置</h5>
+
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="file" name="avatar" id="avatarInput" class="d-none" accept="image/*" onchange="previewImage(this)">
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">昵称</label>
+                        <input type="text" name="nickname" value="{{ user.first_name }}" class="form-control border-0 bg-white bg-opacity-50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">个人简介</label>
+                        <textarea name="bio" class="form-control border-0 bg-white bg-opacity-50" rows="2">{{ user.bio }}</textarea>
+                    </div>
+
+                    <h6 class="fw-bold mt-4 mb-3 text-info"><i class="fas fa-magic"></i> 个性化</h6>
+
+                    <!-- 看板娘开关 -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">看板娘</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="show_live2d" id="live2dSwitch" {% if user.show_live2d %}checked{% endif %}>
+                            <label class="form-check-label small" for="live2dSwitch">开启显示 (刷新生效)</label>
+                        </div>
+                    </div>
+
+                    <!-- 👇👇👇 找回丢失的主题选择框 👇👇👇 -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">主题风格</label>
+                        <!-- 👇 修复后的主题选择框 👇 -->
+                    <!-- 👇 替换这一块 👇 -->
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">主题风格</label>
+                        <select name="theme_color" class="form-select border-0 bg-white bg-opacity-50" style="padding: 12px; border-radius: 12px;">
+                            <option value="blue"   {% if user.theme_color == 'blue' %}selected{% endif %}>☁️ 天空之城 (默认蓝)</option>
+                            <option value="purple" {% if user.theme_color == 'purple' %}selected{% endif %}>🔮 赛博朋克 (霓虹紫)</option>
+                            <option value="dark"   {% if user.theme_color == 'dark' %}selected{% endif %}>🌙 深夜模式 (极简黑)</option>
+                            <option value="green"  {% if user.theme_color == 'green' %}selected{% endif %}>🍃 森之秘境 (清新绿)</option>
+                            <option value="pink"   {% if user.theme_color == 'pink' %}selected{% endif %}>🌸 樱花烂漫 (柔和粉)</option>
+                        </select>
+                    </div>
+                    <!-- 👆 替换结束 👆 -->
+                    <!-- 👆 修复结束 👆 -->
+                            <option value="blue" {% if user.theme_color == 'blue' %}selected{% endif %}>☁️ 天空之城 (默认)</option>
+                            <option value="purple" {% if user.theme_color == 'purple' %}selected{% endif %}>🔮 赛博朋克</option>
+                            <option value="dark" {% if user.theme_color == 'dark' %}selected{% endif %}>🌙 深夜模式</option>
+                            <option value="green" {% if user.theme_color == 'green' %}selected{% endif %}>🍃 森之秘境</option>
+                            <option value="pink" {% if user.theme_color == 'pink' %}selected{% endif %}>🌸 樱花烂漫</option>
+                        </select>
+                    </div>
+                    <!-- 👆👆👆 找回结束 👆👆👆 -->
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">博客标题</label>
+                        <input type="text" name="blog_title" value="{{ user.blog_title }}" class="form-control border-0 bg-white bg-opacity-50">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-muted">背景图</label>
+                        <input type="file" name="blog_bg" class="form-control form-control-sm">
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="btn btn-sky shadow-sm">保存更改</button>
+                        <a href="{% url 'account_change_password' %}" class="btn btn-light text-muted btn-sm rounded-pill">修改密码</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 右侧文章列表 -->
+        <div class="col-md-8">
+            <div class="glass-card animate__animated animate__fadeInUp animate__delay-1s">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-layer-group text-success"></i> 我的文章</h5>
+                    <a href="{% url 'create_post' %}" class="btn btn-sm btn-outline-success rounded-pill"><i class="fas fa-plus"></i> 新建</a>
+                </div>
+
+                <div class="list-group list-group-flush">
+                    {% for post in user_posts %}
+                    <div class="list-group-item bg-transparent border-bottom py-3 px-0">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div style="max-width: 70%;">
+                                <h6 class="mb-1 fw-bold text-truncate">{{ post.title }}</h6>
+                                <div class="small text-muted">
+                                    {% if post.is_draft %}<span class="badge bg-warning text-dark me-1">草稿</span>{% endif %}
+                                    <i class="far fa-clock"></i> {{ post.created_at|date:"Y/m/d" }}
+                                    <span class="mx-1">·</span>
+                                    <i class="far fa-eye"></i> {{ post.views }}
+                                </div>
+                            </div>
+                            <div>
+                                <a href="{% url 'edit_post' post.pk %}" class="btn btn-light btn-sm rounded-circle text-primary shadow-sm"><i class="fas fa-pen"></i></a>
+                                <a href="{% url 'delete_post' post.pk %}" onclick="return confirm('确认删除？')" class="btn btn-light btn-sm rounded-circle text-danger shadow-sm ms-1"><i class="fas fa-trash"></i></a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-5 text-muted">空空如也，快去创作吧！</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) { document.getElementById('avatarPreview').src = e.target.result; }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+{% endblock %}

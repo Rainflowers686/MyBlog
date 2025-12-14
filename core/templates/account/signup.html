@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-8">
+        <div class="glass-card animate__animated animate__fadeInUp">
+            <div class="text-center mb-4">
+                <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+                <h4 class="fw-bold">创建新账号</h4>
+                <p class="text-muted small">加入我们，开始你的创作之旅</p>
+            </div>
+
+            <form method="post" action="{% url 'account_signup' %}">
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        {{ field.label_tag }}
+                        {{ field }}
+
+                        <!-- 帮助文本 (密码规则等) -->
+                        {% if field.help_text %}
+                            <div class="helptext">{{ field.help_text|safe }}</div>
+                        {% endif %}
+
+                        <!-- 错误提示 -->
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1 ps-2">
+                                {{ field.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn btn-sky w-100 rounded-pill btn-lg mt-4 shadow-lg">立即注册</button>
+            </form>
+
+            <div class="text-center mt-4 border-top pt-3">
+                <p class="small text-muted mb-2">已有账号？</p>
+                <a href="{% url 'account_login' %}" class="btn btn-sm btn-light rounded-pill border px-4">去登录</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

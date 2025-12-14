@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load socialaccount %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5 col-md-7">
+        <div class="glass-card animate__animated animate__fadeInUp">
+            <div class="text-center mb-4">
+                <i class="fas fa-meteor fa-3x text-primary mb-3"></i>
+                <h4 class="fw-bold">欢迎回来</h4>
+            </div>
+
+            <!-- 社交登录 (胶囊按钮) -->
+            <div class="d-grid gap-2 mb-4">
+                <a href="{% provider_login_url 'github' %}" class="btn btn-dark rounded-pill py-2 border-0 shadow-sm" style="background: #333;">
+                    <i class="fab fa-github me-2"></i> GitHub 登录
+                </a>
+                <a href="{% provider_login_url 'google' %}" class="btn btn-light rounded-pill py-2 border shadow-sm">
+                    <i class="fab fa-google me-2 text-danger"></i> Google 登录
+                </a>
+            </div>
+
+            <div class="text-center text-muted small mb-3 opacity-50">— 或使用账号登录 —</div>
+
+            <form method="post" action="{% url 'account_login' %}">
+                {% csrf_token %}
+
+                <!-- 自动渲染字段 (会应用 base.html 里的样式) -->
+                {% for field in form %}
+                    <div class="mb-4"> <!-- 增加间距 -->
+                        {{ field.label_tag }}
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1 ps-2">
+                                <i class="fas fa-exclamation-circle"></i> {{ field.errors.0 }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button class="btn btn-sky w-100 rounded-pill btn-lg mt-2 shadow-lg">立即登录</button>
+            </form>
+
+            <div class="d-flex justify-content-between mt-4 small px-2">
+                <a href="{% url 'account_signup' %}" class="text-decoration-none text-muted hover-link">注册新账号</a>
+                <a href="{% url 'account_reset_password' %}" class="text-decoration-none text-muted hover-link">忘记密码?</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

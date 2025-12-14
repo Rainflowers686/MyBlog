@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center" style="margin-top: 80px;">
+    <div class="col-md-6">
+        <div class="glass-card text-center animate__animated animate__fadeInDown">
+            <div class="mb-4">
+                <i class="fas fa-user-shield fa-3x text-primary"></i>
+            </div>
+            
+            <h2 class="fw-bold mb-3">完善账号信息</h2>
+            <p class="text-muted mb-4">
+                你正在使用第三方账号登录。为了方便你在本站互动，请确认你的显示昵称和邮箱。
+            </p>
+
+            <form class="signup" id="signup_form" method="post" action="{% url 'socialaccount_signup' %}">
+                {% csrf_token %}
+                
+                <!-- 手动渲染表单字段以美化 -->
+                {% for field in form %}
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-bold small text-secondary">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">{{ field.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                {% if redirect_field_value %}
+                    <input type="hidden" name="{{ redirect_field_name }}" value="{{ redirect_field_value }}" />
+                {% endif %}
+
+                <button class="btn btn-sky w-100 btn-lg shadow mt-3" type="submit">
+                    确认并登录 &raquo;
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

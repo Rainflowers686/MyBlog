@@ -1,0 +1,222 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+
+        <!-- 1. 文章主体卡片 -->
+        <div class="glass-card mb-5 animate__animated animate__fadeInUp">
+            <!-- 标题区 -->
+            <div class="text-center mb-5 border-bottom pb-4 border-light border-opacity-50">
+                <div class="mb-3">
+                    {% for tag in post.tags.all %}
+                        <a href="/blog/?tag={{ tag.id }}" class="tag-pill small border-0 shadow-sm">{{ tag.name }}</a>
+                    {% endfor %}
+                </div>
+                <h1 class="display-5 fw-bold mb-3 text-dark">{{ post.title }}</h1>
+
+                <div class="d-flex justify-content-center align-items-center text-muted small mt-3">
+                    <span class="d-flex align-items-center me-4">
+                        {% if post.author.avatar %}
+                            <img src="{{ post.author.avatar.url }}" class="rounded-circle border border-2 border-white shadow-sm me-2" width="30" height="30">
+                        {% else %}
+                            <i class="fas fa-user-circle fs-4 me-2"></i>
+                        {% endif %}
+                        {{ post.author.first_name|default:post.author.username }}
+                    </span>
+                    <span class="me-4"><i class="far fa-calendar-alt me-1"></i> {{ post.created_at|date:"Y/m/d" }}</span>
+                    <span><i class="far fa-eye me-1"></i> {{ post.views }}</span>
+                </div>
+            </div>
+
+            <!-- 正文区 (CKEditor 内容) -->
+            <article class="post-content fs-5 lh-lg mb-5 text-break">
+                {{ post.content|safe }}
+            </article>
+
+            <!-- 底部互动栏 -->
+            <div class="d-flex justify-content-center align-items-center gap-4 py-4 border-top border-light border-opacity-50">
+                <!-- 文章点赞 -->
+                <button onclick="toggleLike({{ post.pk }})" class="btn btn-light rounded-pill px-4 py-2 border shadow-sm transition hover-scale group" id="like-btn">
+                    <i class="{% if request.user in post.likes.all %}fas text-danger animate__animated animate__heartBeat{% else %}far text-muted{% endif %} fa-heart me-2 transition"></i>
+                    <span id="like-count" class="fw-bold text-secondary">{{ post.likes.count }}</span>
+                </button>
+
+                <!-- 社交分享 -->
+                <div class="d-flex gap-2">
+                    <button onclick="shareTo('weibo')" class="btn btn-sm btn-outline-danger rounded-circle p-2" style="width:40px; height:40px;"><i class="fab fa-weibo"></i></button>
+                    <button onclick="shareTo('weixin')" class="btn btn-sm btn-outline-success rounded-circle p-2" style="width:40px; height:40px;"><i class="fab fa-weixin"></i></button>
+                    <button onclick="shareTo('twitter')" class="btn btn-sm btn-outline-dark rounded-circle p-2" style="width:40px; height:40px;"><i class="fab fa-twitter"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 评论区 (重点美化) -->
+        <div class="glass-card animate__animated animate__fadeInUp animate__delay-1s">
+            <h4 class="fw-bold mb-4 ps-2 border-start border-4 border-primary">
+                <i class="fas fa-comments text-primary me-2 opacity-50"></i>
+                评论 <span class="text-muted fs-6">({{ post.comments.count }})</span>
+            </h4>
+
+            <!-- 发表评论框 -->
+            {% if user.is_authenticated %}
+            <form method="post" class="mb-5 position-relative">
+                {% csrf_token %}
+                <input type="hidden" name="parent_id" id="parent_id">
+                <div class="d-flex gap-3">
+                    <div class="flex-shrink-0 d-none d-md-block">
+                        {% if user.avatar %}
+                            <img src="{{ user.avatar.url }}" class="rounded-circle border border-2 border-white shadow-sm" width="45" height="45">
+                        {% else %}
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;"><i class="fas fa-user text-secondary"></i></div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <textarea name="content" id="commentContent" class="form-control border-0 shadow-inner bg-light bg-opacity-50" rows="3" placeholder="写下你的想法..." style="border-radius: 15px; resize: none;"></textarea>
+                        <div class="text-end mt-2">
+                            <button class="btn btn-sky px-4 rounded-pill shadow-sm">发布 <i class="fas fa-paper-plane ms-1"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+            {% else %}
+                <div class="alert alert-light border shadow-sm rounded-4 text-center py-4 mb-5">
+                    <p class="mb-2 text-muted">登录后参与讨论</p>
+                    <a href="{% url 'account_login' %}?next={{ request.path }}" class="btn btn-sm btn-primary rounded-pill px-4">去登录</a>
+                </div>
+            {% endif %}
+
+            <!-- 评论列表 (流式对话风格) -->
+            <div class="comment-flow">
+                {% for comment in post.comments.all %}
+                    {% if not comment.parent %}
+                        <!-- 父评论项 -->
+                        <div class="d-flex mb-4 animate__animated animate__fadeIn">
+                            <!-- 头像 -->
+                            <div class="flex-shrink-0 me-3">
+                                {% if comment.user.avatar %}
+                                    <img src="{{ comment.user.avatar.url }}" class="rounded-circle border border-2 border-white shadow-sm hover-scale" width="50" height="50" style="object-fit: cover;">
+                                {% else %}
+                                    <div class="rounded-circle bg-white border border-2 border-light d-flex align-items-center justify-content-center shadow-sm" style="width: 50px; height: 50px;">
+                                        <span class="fw-bold text-primary">{{ comment.user.username.0|upper }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- 内容气泡 -->
+                            <div class="flex-grow-1">
+                                <div class="bg-white bg-opacity-60 p-3 rounded-4 shadow-sm border border-light position-relative comment-bubble">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="fw-bold mb-0 text-dark">{{ comment.user.first_name|default:comment.user.username }}</h6>
+                                        <small class="text-muted" style="font-size: 0.75rem;">{{ comment.created_at|timesince }}前</small>
+                                    </div>
+                                    <p class="mb-2 text-secondary" style="line-height: 1.6;">{{ comment.content }}</p>
+
+                                    <!-- 操作栏 -->
+                                    <div class="d-flex align-items-center gap-3">
+                                        <button onclick="toggleCommentLike({{ comment.id }})" class="btn btn-sm p-0 border-0 text-muted hover-danger" id="comment-like-btn-{{ comment.id }}">
+                                            <i class="{% if request.user in comment.likes.all %}fas text-danger{% else %}far{% endif %} fa-heart"></i>
+                                            <span id="comment-like-count-{{ comment.id }}" class="ms-1">{{ comment.likes.count }}</span>
+                                        </button>
+                                        <button class="btn btn-sm p-0 border-0 text-muted hover-primary" onclick="replyTo('{{ comment.id }}', '{{ comment.user.username }}')">
+                                            <i class="fas fa-reply"></i> 回复
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- 子评论 (楼中楼) -->
+                                {% if comment.replies.all %}
+                                <div class="ms-2 mt-2 ps-3 border-start border-2 border-primary border-opacity-25">
+                                    {% for reply in comment.replies.all %}
+                                        <div class="d-flex mt-3">
+                                            <div class="flex-shrink-0 me-2">
+                                                {% if reply.user.avatar %}
+                                                    <img src="{{ reply.user.avatar.url }}" class="rounded-circle shadow-sm" width="35" height="35">
+                                                {% else %}
+                                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center shadow-sm" style="width: 35px; height: 35px; font-size: 0.8rem;">{{ reply.user.username.0|upper }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="bg-light bg-opacity-75 p-2 px-3 rounded-3 flex-grow-1 shadow-sm border border-white">
+                                                <div class="d-flex align-items-baseline justify-content-between">
+                                                    <span class="fw-bold small text-dark me-2">{{ reply.user.username }}</span>
+                                                    <small class="text-muted" style="font-size: 0.7rem;">{{ reply.created_at|timesince }}</small>
+                                                </div>
+                                                <p class="mb-0 small text-secondary">{{ reply.content }}</p>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <div class="text-center py-5 opacity-50">
+                        <i class="far fa-comments fa-3x mb-3 text-secondary"></i>
+                        <p>还没有人评论，来抢沙发吧~</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 额外的微调样式 */
+    .post-content img { max-width: 100%; border-radius: 12px; margin: 15px 0; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .post-content pre { background: #282c34; border-radius: 12px; padding: 15px; color: #abb2bf; }
+    .hover-scale:hover { transform: scale(1.1); transition: 0.2s; }
+    .hover-danger:hover { color: #dc3545 !important; }
+    .hover-primary:hover { color: #007aff !important; }
+    .comment-bubble::before { /* 小三角 */
+        content: ''; position: absolute; top: 15px; left: -8px;
+        width: 0; height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-right: 8px solid rgba(255,255,255,0.6);
+    }
+</style>
+
+<script>
+    // 点赞逻辑
+    function toggleLike(pk) {
+        fetch(`/like/${pk}/`).then(r => r.json()).then(data => {
+            const btn = document.getElementById('like-btn');
+            const icon = btn.querySelector('i');
+            document.getElementById('like-count').innerText = data.count;
+            if(data.liked) {
+                icon.classList.remove('far', 'text-muted');
+                icon.classList.add('fas', 'text-danger', 'animate__heartBeat');
+            } else {
+                icon.classList.remove('fas', 'text-danger', 'animate__heartBeat');
+                icon.classList.add('far', 'text-muted');
+            }
+        });
+    }
+
+    // 评论点赞
+    function toggleCommentLike(pk) {
+        fetch(`/like/comment/${pk}/`).then(r => r.json()).then(data => {
+            const btn = document.getElementById(`comment-like-btn-${pk}`);
+            const icon = btn.querySelector('i');
+            document.getElementById(`comment-like-count-${pk}`).innerText = data.count;
+            if(data.liked) {
+                icon.classList.remove('far'); icon.classList.add('fas', 'text-danger');
+            } else {
+                icon.classList.remove('fas', 'text-danger'); icon.classList.add('far');
+            }
+        });
+    }
+
+    // 社交分享
+    function shareTo(platform) {
+        const url = encodeURIComponent(window.location.href);
+        const title = encodeURIComponent("{{ post.title }}");
+        let targetUrl = "";
+        if (platform === 'weibo') targetUrl = `http://service.weibo.com/share/share.php?url=${url}&title=${title}`;
+        else if (platform === 'twitter') targetUrl = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
+        else if (platform === 'weixin') { alert("请截图后分享到微信朋友圈！"); return; }
+        window.open(targetUrl, '_blank', 'width=600,height=400');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+
+    <!-- 左侧：文章列表区域 -->
+    <div class="col-lg-8">
+
+        <!-- 1. 快速创作触发栏 (修复头像) -->
+        {% if user.is_authenticated %}
+        <div class="glass-card mb-4 p-3 d-flex align-items-center shadow-sm card-hover"
+             style="cursor: pointer; transition: 0.3s;"
+             onclick="window.location.href='{% url 'create_post' %}'">
+
+            <div class="me-3">
+                <!-- 👇 智能头像：有图显图，没图显首字母，出错自动修复 👇 -->
+                <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=random{% endif %}"
+                     class="rounded-circle border border-2 border-white shadow-sm"
+                     width="45" height="45" style="object-fit: cover;"
+                     onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}&background=random'">
+            </div>
+
+            <div class="flex-grow-1 bg-light bg-opacity-50 rounded-pill px-4 py-2 text-muted small d-flex align-items-center border border-white">
+                <i class="fas fa-pen-nib me-2 opacity-50"></i>
+                <span>分享你的技术与生活感悟...</span>
+            </div>
+
+            <div class="ms-3 d-none d-md-flex gap-2 text-secondary opacity-50">
+                <i class="fas fa-image"></i>
+                <i class="fas fa-code"></i>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- 顶部工具栏 -->
+        <div class="d-flex justify-content-between align-items-center mb-4" data-aos="fade-right">
+            <h4 class="fw-bold text-secondary mb-0">
+                <i class="fas fa-stream me-2 text-primary opacity-75"></i> 探索文章
+            </h4>
+            <div class="bg-white rounded-pill p-1 shadow-sm d-flex">
+                <a href="?sort=date" class="btn btn-sm rounded-pill px-3 transition {% if request.GET.sort != 'popularity' %}btn-primary shadow-sm{% else %}btn-light text-muted bg-transparent{% endif %}">最新</a>
+                <a href="?sort=popularity" class="btn btn-sm rounded-pill px-3 transition {% if request.GET.sort == 'popularity' %}btn-primary shadow-sm{% else %}btn-light text-muted bg-transparent{% endif %}">最热</a>
+            </div>
+        </div>
+
+        <!-- 文章循环列表 -->
+        {% for post in page_obj %}
+        <div class="glass-card card-hover mb-4 p-4 position-relative" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+
+            {% if post.category %}
+            <a href="?cat={{ post.category.id }}" class="position-absolute top-0 end-0 m-3 text-decoration-none">
+                <span class="badge rounded-pill py-2 px-3 shadow-sm text-uppercase"
+                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    {{ post.category.name }}
+                </span>
+            </a>
+            {% endif %}
+
+            <h2 class="h3 fw-bold mb-3 mt-1">
+                <a href="{% url 'post_detail' post.pk %}" class="text-dark text-decoration-none link-primary-hover transition">
+                    {{ post.title }}
+                </a>
+            </h2>
+
+            <p class="text-secondary mb-4 opacity-75 text-truncate-3" style="line-height: 1.8;">
+                {{ post.content|striptags|truncatechars:120 }}
+            </p>
+
+            <div class="d-flex align-items-center border-top pt-3">
+                <div class="d-flex align-items-center me-auto">
+                    <a href="{% url 'author_detail' post.author.pk %}" class="d-flex align-items-center text-decoration-none">
+
+                        <!-- 2. 文章列表作者头像 (修复白框问题) -->
+                        <!-- 👇 统一使用 img 标签 + onerror 兜底，不再用 if/else div 👇 -->
+                        <img src="{% if post.author.avatar %}{{ post.author.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ post.author.username }}&background=random{% endif %}"
+                             class="rounded-circle shadow-sm border border-2 border-white"
+                             width="32" height="32" style="object-fit: cover;"
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ post.author.username }}&background=random'">
+
+                        <span class="ms-2 fw-bold text-dark small">{{ post.author.first_name|default:post.author.username }}</span>
+                    </a>
+                    <span class="mx-2 text-muted small">•</span>
+                    <span class="text-muted small"><i class="far fa-clock me-1"></i> {{ post.created_at|date:"Y-m-d" }}</span>
+                </div>
+
+                <div class="text-muted small d-flex gap-3">
+                    <span title="阅读量"><i class="far fa-eye me-1"></i> {{ post.views }}</span>
+                    <span title="点赞数"><i class="far fa-heart me-1 text-danger"></i> {{ post.likes.count }}</span>
+                    <span title="评论数"><i class="far fa-comment-dots me-1 text-primary"></i> {{ post.comments.count }}</span>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="glass-card text-center py-5" data-aos="zoom-in">
+            <div class="mb-3 opacity-50"><i class="fas fa-wind fa-4x text-secondary"></i></div>
+            <h5 class="text-muted">暂时没有文章</h5>
+            <p class="small text-secondary">不如现在就开始创作第一篇吧！</p>
+            <a href="{% url 'create_post' %}" class="btn btn-sky mt-3 rounded-pill px-4">开始创作</a>
+        </div>
+        {% endfor %}
+
+        <!-- 分页 -->
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-center mt-5 mb-4">
+            <nav>
+                <ul class="pagination pagination-lg shadow-sm rounded-pill overflow-hidden bg-white p-1">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link border-0 text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" href="?page={{ page_obj.previous_page_number }}"><i class="fas fa-chevron-left"></i></a>
+                    </li>
+                    {% endif %}
+                    <li class="page-item disabled mx-2"><span class="page-link border-0 fw-bold text-primary bg-transparent d-flex align-items-center h-100">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link border-0 text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" href="?page={{ page_obj.next_page_number }}"><i class="fas fa-chevron-right"></i></a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 右侧：侧边栏 -->
+    <div class="col-lg-4">
+        <div class="position-sticky" style="top: 20px; z-index: 5;">
+            <!-- 搜索 -->
+            <div class="glass-card p-4 mb-4" data-aos="fade-left" data-aos-delay="100">
+                <h5 class="fw-bold mb-3 small text-uppercase text-muted ls-1">搜索</h5>
+                <form method="get">
+                    <div class="position-relative">
+                        <input type="text" name="q" class="form-control rounded-pill ps-4 py-2 border-0 bg-light shadow-inner" placeholder="输入关键词..." value="{{ request.GET.q }}">
+                        <button class="btn border-0 position-absolute top-50 end-0 translate-middle-y me-2 text-muted hover-primary"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 分类 -->
+            <div class="glass-card p-4 mb-4" data-aos="fade-left" data-aos-delay="200">
+                <h5 class="fw-bold mb-3 small text-uppercase text-muted ls-1">文章分类</h5>
+                <div class="d-flex flex-column gap-2">
+                    <a href="?cat=" class="d-flex justify-content-between align-items-center p-2 rounded-3 text-decoration-none transition hover-bg-light {% if not request.GET.cat %}text-primary fw-bold{% else %}text-secondary{% endif %}">
+                        <span><i class="fas fa-th-large me-2 opacity-50"></i>全部文章</span>
+                    </a>
+                    {% for cat in categories %}
+                    <a href="?cat={{ cat.id }}" class="d-flex justify-content-between align-items-center p-2 rounded-3 text-decoration-none transition hover-bg-light {% if request.GET.cat|add:'0' == cat.id %}text-primary fw-bold{% else %}text-secondary{% endif %}">
+                        <span><i class="fas fa-folder me-2 opacity-50"></i>{{ cat.name }}</span>
+                        <span class="badge bg-light text-secondary rounded-pill">{{ cat.post_set.count }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 标签云 -->
+            <div class="glass-card p-4" data-aos="fade-left" data-aos-delay="300">
+                <h5 class="fw-bold mb-3 small text-uppercase text-muted ls-1">热门标签</h5>
+                {% if tags %}
+                <div class="d-flex flex-wrap gap-2">
+                    {% for tag in tags %}
+                    <a href="?tag={{ tag.id }}" class="tag-pill border-0 shadow-sm {% if request.GET.tag|add:'0' == tag.id %}bg-primary text-white{% endif %}">
+                        <i class="fas fa-hashtag me-1 opacity-50"></i>{{ tag.name }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted small mb-0">暂无标签</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .link-primary-hover:hover { color: #0083B0 !important; }
+    .hover-bg-light:hover { background-color: rgba(0,0,0,0.03); }
+    .ls-1 { letter-spacing: 1px; }
+    .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0,0,0,0.06); }
+    .text-truncate-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+</style>
+{% endblock %}

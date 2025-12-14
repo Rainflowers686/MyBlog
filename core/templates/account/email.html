@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="glass-card animate__animated animate__fadeIn">
+            <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-envelope"></i> 邮箱管理</h3>
+
+            <!-- 1. 已绑定的邮箱列表 -->
+            {% if user.emailaddress_set.all %}
+            <p class="text-muted small">当前绑定的邮箱地址：</p>
+            <form action="{% url 'account_email' %}" class="email_list" method="post">
+                {% csrf_token %}
+                <div class="list-group mb-4 shadow-sm rounded-4">
+                    {% for emailaddress in user.emailaddress_set.all %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center bg-light bg-opacity-50">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check me-3">
+                                <input class="form-check-input" type="radio" name="email" 
+                                       {% if emailaddress.primary or user.emailaddress_set.count == 1 %}checked{% endif %} 
+                                       value="{{ emailaddress.email }}">
+                            </div>
+                            <div>
+                                <span class="fw-bold text-dark">{{ emailaddress.email }}</span>
+                                {% if emailaddress.verified %}
+                                    <span class="badge bg-success rounded-pill ms-2">已验证</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark rounded-pill ms-2">未验证</span>
+                                {% endif %}
+                                {% if emailaddress.primary %}
+                                    <span class="badge bg-primary rounded-pill ms-1">主邮箱</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="btn-group shadow-sm">
+                    <button class="btn btn-sm btn-primary" type="submit" name="action_primary">设为主邮箱</button>
+                    <button class="btn btn-sm btn-info text-white" type="submit" name="action_send">发送验证邮件</button>
+                    <button class="btn btn-sm btn-danger" type="submit" name="action_remove">移除选中</button>
+                </div>
+            </form>
+            {% else %}
+                <div class="alert alert-warning">您还没有绑定任何邮箱。</div>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <!-- 2. 添加新邮箱 -->
+            <h5 class="fw-bold mb-3">添加新邮箱</h5>
+            <form method="post" action="{% url 'account_email' %}" class="row g-2 align-items-center">
+                {% csrf_token %}
+                <div class="col-8">
+                    <input type="email" name="email" class="form-control" placeholder="输入新的邮箱地址..." required>
+                </div>
+                <div class="col-4">
+                    <button name="action_add" class="btn btn-sky w-100" type="submit">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

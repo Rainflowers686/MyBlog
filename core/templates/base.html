@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if theme_owner %}{{ theme_owner.blog_title }}{% elif request.path == '/profile/' %}{{ user.blog_title }}{% else %}{{ SITE_TITLE }}{% endif %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+
+    <style>
+        /* --- 1. 主题变量定义 (找回丢失的切换功能) --- */
+        /* 默认蓝 */
+        body.theme-blue {
+            --bg-grad: linear-gradient(-45deg, #a1c4fd, #c2e9fb, #e0c3fc, #8ec5fc);
+            --main-color: #0083B0; --btn-color: #007aff;
+        }
+        /* 赛博紫 */
+        body.theme-purple {
+            --bg-grad: linear-gradient(-45deg, #654ea3, #eaafc8, #764ba2, #667eea);
+            --main-color: #764ba2; --btn-color: #9b59b6;
+        }
+        /* 森之绿 */
+        body.theme-green {
+            --bg-grad: linear-gradient(-45deg, #d4fc79, #96e6a1, #84fab0, #8fd3f4);
+            --main-color: #2e7d32; --btn-color: #2ecc71;
+        }
+        /* 樱花粉 */
+        body.theme-pink {
+            --bg-grad: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fbc2eb, #a18cd1);
+            --main-color: #ff758c; --btn-color: #ff7eb3;
+        }
+        /* 深夜模式 (特殊处理) */
+        body.theme-dark {
+            --bg-grad: linear-gradient(-45deg, #232526, #414345, #2c3e50, #000000);
+            --main-color: #ccc; --btn-color: #555;
+            --text-main: #eee; --text-sub: #aaa;
+            --glass-bg: rgba(30, 30, 30, 0.7); /* 深色玻璃 */
+            --glass-border: rgba(255,255,255,0.1);
+        }
+
+        /* --- 2. 全局基础 --- */
+        body {
+            min-height: 100vh;
+            font-family: -apple-system, "SF Pro Text", Helvetica, Arial, sans-serif;
+            color: var(--text-main, #1d1d1f); /* 使用变量 */
+            display: flex; flex-direction: column;
+            overflow-x: hidden;
+
+            /* 应用动态背景 */
+            background-image: var(--bg-grad);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+        /* --- 3. 特殊页面覆盖 --- */
+
+        /* ☁️ 落地页：强制使用云海图 (不受主题影响) */
+        body.page-landing {
+            background-image: url('https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?q=80&w=3872&auto=format&fit=crop') !important;
+            background-size: cover; background-position: center; background-attachment: fixed;
+            animation: none;
+        }
+        body.page-landing::before { /* 遮罩 */
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.3); pointer-events: none; z-index: -1;
+        }
+
+        /* 用户自定义背景图 (最高优先级) */
+        body[data-user-bg="true"] {
+            background-image: var(--user-bg) !important;
+            background-size: cover; background-attachment: fixed; animation: none;
+        }
+        body[data-user-bg="true"]::before {
+            content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.2); pointer-events: none; z-index: -1;
+        }
+
+        /* --- 4. 💎 液态玻璃卡片 (适配暗黑模式) --- */
+        .glass-card {
+            background: var(--glass-bg, rgba(255, 255, 255, 0.65)); /* 支持暗黑切换 */
+            backdrop-filter: blur(50px) saturate(200%);
+            -webkit-backdrop-filter: blur(50px) saturate(200%);
+
+            border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.6));
+            border-top: 1.5px solid var(--glass-border, rgba(255, 255, 255, 0.9));
+
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 0 20px rgba(255,255,255,0.1);
+
+            border-radius: 24px; padding: 40px;
+            transition: all 0.4s;
+            word-wrap: break-word !important; word-break: break-word !important;
+            color: var(--text-main, #333);
+        }
+
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.01);
+            background: var(--glass-bg, rgba(255, 255, 255, 0.75));
+            box-shadow: 0 30px 60px rgba(0,0,0,0.15);
+        }
+
+        /* 暗黑模式下的文字修正 */
+        body.theme-dark .text-muted, body.theme-dark .text-secondary { color: #aaa !important; }
+        body.theme-dark .text-dark { color: #fff !important; }
+        body.theme-dark .navbar-brand { color: #fff !important; }
+
+        /* --- 5. 组件适配主题色 --- */
+
+        /* 顶部 Banner */
+        .page-header {
+            height: 380px; background-size: cover; background-position: center; position: relative;
+            margin-bottom: -100px;
+            mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+        }
+
+        /* 标签与按钮 */
+        .tag-pill {
+            display: inline-flex !important; align-items: center; justify-content: center;
+            font-size: 0.85rem !important; padding: 8px 16px; margin: 0 6px 10px 0;
+            background: var(--glass-bg, rgba(255,255,255,0.5));
+            border: 1px solid var(--glass-border, rgba(255,255,255,0.4));
+            color: var(--text-main, #333); text-decoration: none !important; border-radius: 50px;
+            backdrop-filter: blur(10px); transition: 0.2s;
+        }
+        .tag-pill:hover { background: var(--btn-color); color: white; border-color: transparent; }
+
+        .btn-sky {
+            background: var(--btn-color); /* 跟随主题色 */
+            color: white; border: none; border-radius: 100px;
+            padding: 10px 28px; font-weight: 500; transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .btn-sky:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        /* 导航栏 */
+        .navbar { background: transparent; transition: 0.3s; padding-top: 20px; z-index: 100; }
+        .navbar.scrolled {
+            background: var(--glass-bg, rgba(255,255,255,0.7));
+            backdrop-filter: blur(20px) saturate(180%);
+            border-bottom: 1px solid rgba(255,255,255,0.2); padding-top: 10px;
+        }
+        .navbar-brand { font-weight: 700; color: white !important; text-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .nav-link { color: rgba(255,255,255,0.95) !important; font-weight: 500; text-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+        .scrolled .navbar-brand { color: var(--text-main, #1d1d1f) !important; text-shadow: none; }
+        .scrolled .nav-link { color: var(--text-main, #555) !important; text-shadow: none; }
+        .scrolled .nav-link:hover { color: var(--btn-color) !important; }
+
+        /* 返回按钮 (左上角) */
+        .back-to-prev {
+            position: fixed; top: 100px; left: 30px; z-index: 9999;
+            width: 45px; height: 45px; border-radius: 50%;
+            background: var(--glass-bg, rgba(255, 255, 255, 0.9)); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex; align-items: center; justify-content: center;
+            color: var(--text-main, #333); text-decoration: none; transition: 0.3s;
+        }
+        .back-to-prev:hover { transform: scale(1.1) translateX(-3px); background: var(--btn-color); color: white; }
+        body.page-landing .back-to-prev { display: none !important; }
+
+        .user-avatar {
+            width: 38px; height: 38px; object-fit: cover;
+            border-radius: 50%; border: 2px solid rgba(255,255,255,0.9);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); background-color: #fff;
+        }
+
+        #live2d-widget { bottom: 0; left: 0; pointer-events: none; z-index: 999; }
+        #live2dcanvas { pointer-events: auto; }
+
+        footer { margin-top: auto; padding: 40px; text-align: center; color: rgba(255,255,255,0.6); }
+        body.page-landing footer { display: none; }
+
+        /* 表单修正 */
+        .glass-card form label { display: block !important; width: 100%; margin-bottom: 8px; font-weight: 600; color: var(--text-main, #444); }
+        .glass-card input[type="text"], .glass-card input[type="password"], .glass-card input[type="email"], .glass-card textarea, .glass-card select {
+            width: 100%; padding: 12px 20px; border-radius: 12px;
+            background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.03); color: var(--text-main, #333);
+            transition: all 0.3s ease; outline: none;
+        }
+        body.theme-dark .glass-card input { background: rgba(0,0,0,0.3); border-color: #555; color: #eee; }
+    </style>
+</head>
+
+<body class="{% if request.path == '/' %}page-landing{% endif %} theme-{% if theme_owner %}{{ theme_owner.theme_color }}{% elif user.is_authenticated %}{{ user.theme_color }}{% else %}{{ CURRENT_THEME|default:'blue' }}{% endif %}"
+      {% if theme_owner and theme_owner.blog_bg %}
+          style="--user-bg: url('{{ theme_owner.blog_bg.url }}');" data-user-bg="true"
+      {% elif user.is_authenticated and user.blog_bg %}
+          style="--user-bg: url('{{ user.blog_bg.url }}');" data-user-bg="true"
+      {% elif SITE_BG_URL and request.path != '/' %}
+          style="--user-bg: url('{{ SITE_BG_URL }}');" data-user-bg="true"
+      {% endif %}
+>
+
+<!-- 返回按钮 -->
+<a href="javascript:history.back()" class="back-to-prev shadow-lg" title="返回上一页">
+    <i class="fas fa-arrow-left fa-lg"></i>
+</a>
+
+<!-- ... 下面的 HTML 内容保持不变，不需要动 ... -->
+<!-- ... 包含导航栏、消息提示、内容区域、脚本 ... -->
+<!-- ... 直接复制你之前的内容或者保留原样即可 ... -->
+
+{% with target=theme_owner|default:user %}
+{% if request.path != '/' %}
+<div class="page-header"
+     style="background-image: url('{% if target.is_authenticated and target.blog_bg %}{{ target.blog_bg.url }}{% elif SITE_BG_URL %}{{ SITE_BG_URL }}{% else %}https://source.unsplash.com/random/1920x600/?nature,sky{% endif %}');">
+    <div class="container h-100 d-flex align-items-center justify-content-center text-center text-white position-relative" style="z-index: 2;">
+        <div data-aos="fade-up">
+            <h1 class="display-4 fw-bold mb-3" style="text-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                {% if request.path == '/blog/' %}最新动态
+                {% elif 'login' in request.path %}欢迎回来
+                {% elif 'signup' in request.path %}加入我们
+                {% elif 'password' in request.path %}安全中心
+                {% elif theme_owner %}{{ theme_owner.blog_title }}
+                {% elif user.is_authenticated %}{{ user.blog_title }}
+                {% else %}{{ SITE_DESC }}{% endif %}
+            </h1>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<nav class="navbar navbar-expand-lg fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+        {% if request.path == '/' %}<span style="font-size: 1.5rem;">☁️ {{ SITE_TITLE }}</span>
+        {% else %}<i class="fas fa-cloud"></i> {{ SITE_TITLE }}{% endif %}
+    </a>
+    <button class="navbar-toggler bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navContent">
+      <ul class="navbar-nav ms-auto align-items-center">
+        {% if user.is_superuser %}
+        <li class="nav-item me-2"><a href="/admin/core/sitesetting/" class="btn btn-sm btn-light border rounded-pill opacity-75" target="_blank">⚙️</a></li>
+        {% endif %}
+        {% if user.is_authenticated %}
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" data-bs-toggle="dropdown">
+                    <img src="{% if user.avatar %}{{ user.avatar.url }}{% else %}https://ui-avatars.com/api/?name={{ user.username }}&background=random&color=fff{% endif %}"
+                         class="user-avatar me-2" alt="{{ user.username }}"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}&background=random&color=fff'">
+                    <span>{{ user.first_name|default:user.username }}</span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-2" style="border-radius: 16px;">
+                    <li><a class="dropdown-item rounded-3 py-2" href="{% url 'profile' %}">个人中心</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><form action="{% url 'account_logout' %}" method="post">{% csrf_token %}<button class="dropdown-item rounded-3 py-2 text-danger">退出</button></form></li>
+                </ul>
+            </li>
+        {% else %}
+            <li class="nav-item"><a href="{% url 'account_login' %}" class="btn btn-light rounded-pill px-4 shadow-sm fw-bold" style="color: #007aff;">登录</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endwith %}
+
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1060; margin-top: 70px;">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="toast show glass-card p-3 border-0 mb-2 animate__animated animate__fadeInRight" style="padding: 15px !important; background: rgba(255,255,255,0.95);">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div class="container main-container">
+    {% block content %}{% endblock %}
+</div>
+
+{% if request.path != '/' %}
+<footer class="border-top"><small>&copy; 2025 {{ SITE_TITLE }}. All rights reserved.</small></footer>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+{% if user.is_authenticated and user.show_live2d or not user.is_authenticated %}
+<script src="https://unpkg.com/live2d-widget/lib/L2Dwidget.min.js"></script>
+<script>
+    if (window.innerWidth >= 768) {
+        L2Dwidget.init({
+            "model": { "jsonPath": "https://cdn.jsdelivr.net/gh/iCharlesZ/vscode-live2d-models/model-library/girls-frontline/HK416-1/destroy/model.json", "scale": 1 },
+            "display": { "position": "left", "width": 200, "height": 400, "hOffset": 0, "vOffset": -50 },
+            "mobile": { "show": false }, "react": { "opacityDefault": 1, "opacityOnHover": 1 }
+        });
+    }
+</script>
+{% endif %}
+
+<script>
+    AOS.init(); hljs.highlightAll();
+    window.addEventListener('scroll', function() {
+        const nav = document.getElementById('mainNav');
+        if (window.scrollY > 50) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+    });
+    function replyTo(id, name) { /*...*/ }
+</script>
+</body>
+</html>

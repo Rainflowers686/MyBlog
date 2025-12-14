@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="glass-card text-center animate__animated animate__zoomIn">
+            <div class="mb-4">
+                <i class="fas fa-user-secret fa-4x text-warning"></i>
+            </div>
+            
+            <h3 class="fw-bold mb-3 text-dark">身份验证通过</h3>
+            
+            <div class="alert alert-warning bg-opacity-25 border-0 rounded-4 py-3 mb-4 text-start">
+                <p class="mb-2 fw-bold"><i class="fas fa-shield-alt me-1"></i> 安全提示 (演示模式)</p>
+                <small class="text-dark opacity-75">
+                    系统检测到您正在使用演示环境。为了方便操作，我们已拦截邮件发送流程，您可以直接点击下方按钮重置密码。
+                    <br>
+                    <strong>目标邮箱：</strong> {{ email }}
+                </small>
+            </div>
+            
+            <div class="d-grid gap-3">
+                <a href="{{ reset_url }}" class="btn btn-sky btn-lg shadow position-relative overflow-hidden">
+                    <span class="position-relative z-1">
+                        <i class="fas fa-rocket me-2"></i> 立即重置密码
+                    </span>
+                </a>
+                
+                <a href="{% url 'account_login' %}" class="btn btn-light rounded-pill border">
+                    暂不重置，返回登录
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

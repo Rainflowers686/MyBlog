@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% load socialaccount %}
+
+{% block content %}
+<div class="row justify-content-center" style="margin-top: 80px;">
+    <div class="col-md-6">
+        <div class="glass-card text-center animate__animated animate__fadeInDown">
+            <!-- 顶部图标 -->
+            <div class="mb-4">
+                <div class="d-inline-block p-3 rounded-circle shadow-sm" style="background: rgba(255,255,255,0.5);">
+                    {% if provider.id == 'google' %}
+                        <i class="fab fa-google fa-3x text-danger"></i>
+                    {% elif provider.id == 'github' %}
+                        <i class="fab fa-github fa-3x text-dark"></i>
+                    {% else %}
+                        <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- 标题 -->
+            <h2 class="fw-bold mb-3" style="color: #444;">
+                即将通过 {{ provider.name }} 登录
+            </h2>
+
+            <!-- 提示文字 -->
+            <div class="alert alert-info border-0 rounded-4 shadow-sm py-3 mb-4" role="alert">
+                <i class="fas fa-info-circle me-2"></i>
+                <span class="small">
+                    为了保障您的账号安全，我们需要您确认本次登录操作。<br>
+                    您即将使用 <strong>{{ provider.name }}</strong> 账号接入云端博客。
+                </span>
+            </div>
+
+            <!-- 确认表单 -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="d-grid gap-3">
+                    <button type="submit" class="btn btn-sky btn-lg shadow">
+                        <i class="fas fa-sign-in-alt me-2"></i> 确认并继续
+                    </button>
+                    
+                    <a href="{% url 'account_login' %}" class="btn btn-light btn-lg rounded-pill border">
+                        取消
+                    </a>
+                </div>
+            </form>
+            
+            <p class="mt-4 text-muted small">
+                点击确认即代表您同意本站的服务条款。
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

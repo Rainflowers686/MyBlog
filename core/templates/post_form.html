@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="glass-card animate__animated animate__fadeInUp">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold text-primary">
+                    <i class="fas fa-pen-fancy"></i> {% if post %}编辑文章{% else %}发布新文章{% endif %}
+                </h2>
+                <a href="/" class="btn btn-sm btn-light rounded-pill border">取消返回</a>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-4">
+                    <label class="form-label text-muted fw-bold">文章标题</label>
+                    <input type="text" name="title" class="form-control form-control-lg fw-bold"
+                           value="{{ post.title|default:'' }}" placeholder="请输入精彩的标题..." required>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-muted fw-bold">文章分类</label>
+                        <input type="text" name="category" class="form-control"
+                               value="{{ post.category.name|default:'' }}" placeholder="例如：生活、技术（自动创建）">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-muted fw-bold">添加标签</label>
+                        <input type="text" name="tags" class="form-control"
+                               value="{% for t in post.tags.all %}{{ t.name }},{% endfor %}" placeholder="多个标签请用逗号隔开">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted fw-bold">正文内容 (支持 Markdown)</label>
+                    <div class="mb-4">
+                        <label class="form-label text-muted fw-bold">正文内容</label>
+
+                       <!-- 1. 必须加这句，加载编辑器的 JS/CSS -->
+                        {{ form.media }}
+
+                        <!-- 2. 渲染编辑器 -->
+                        {{ form.content }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="is_draft" id="draftCheck" {% if post.is_draft %}checked{% endif %}>
+                        <label class="form-check-label" for="draftCheck">保存为草稿 (不公开发布)</label>
+                    </div>
+
+                    <button class="btn btn-sky btn-lg shadow px-5">
+                        <i class="fas fa-paper-plane"></i> 立即发布
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

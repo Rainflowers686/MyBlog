@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="glass-card animate__animated animate__fadeIn">
+            <h3 class="fw-bold mb-4 text-primary"><i class="fas fa-link"></i> 第三方账号绑定</h3>
+
+            <!-- 已绑定的账号 -->
+            {% if form.accounts %}
+            <p class="text-muted small">您已连接以下第三方账号：</p>
+            <form method="post" action="{% url 'socialaccount_connections' %}">
+                {% csrf_token %}
+                
+                <div class="list-group mb-4 shadow-sm">
+                    {% for base_account in form.accounts %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <input class="form-check-input me-3" type="radio" name="account" value="{{ base_account.id }}">
+                            
+                            <!-- 图标判断 -->
+                            <span class="me-2 fs-4">
+                                {% if base_account.provider == 'google' %}<i class="fab fa-google text-danger"></i>
+                                {% elif base_account.provider == 'github' %}<i class="fab fa-github"></i>
+                                {% else %}<i class="fas fa-globe"></i>{% endif %}
+                            </span>
+                            
+                            <div>
+                                <span class="fw-bold">{{ base_account.provider|title }}</span>
+                                <div class="small text-muted">ID: {{ base_account.uid }}</div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success bg-opacity-25 text-success rounded-pill">已连接</span>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill">解除绑定选中账号</button>
+            </form>
+            {% else %}
+                <div class="alert alert-info rounded-pill text-center">当前未绑定任何第三方账号。</div>
+            {% endif %}
+
+            <hr class="my-4">
+
+            <!-- 添加新绑定 -->
+            <h5 class="fw-bold mb-3">绑定更多账号</h5>
+            <div class="d-flex gap-3">
+                <a href="{% url 'socialaccount_login' 'google' %}?process=connect" class="btn btn-light border shadow-sm rounded-pill">
+                    <i class="fab fa-google text-danger"></i> 连接 Google
+                </a>
+                <a href="{% url 'socialaccount_login' 'github' %}?process=connect" class="btn btn-dark shadow-sm rounded-pill">
+                    <i class="fab fa-github"></i> 连接 GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
