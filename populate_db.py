@@ -67,13 +67,13 @@ def run():
     for name in USER_NAMES:
         # 密码统一设为 123456
         if not User.objects.filter(username=name).exists():
-            u = User.objects.create_user(username=name, email=f"{name.lower()}@example.com", password='123456')
+            u = User.objects.create_user(username=name, email=f"{name.lower()}@example.com", password=None)
             u.bio = f"我是 {name}，热爱分享生活！"
             u.save()
             users.append(u)
         else:
             users.append(User.objects.get(username=name))
-    print(f"✅ 创建了 {len(users)} 个测试用户 (密码均为 123456)")
+    print(f"✅ 创建了 {len(users)} 个展示用户；新用户未设置可登录密码")
 
     # --- 4. 创建文章 ---
     print("✍️ 正在疯狂写文章...")

@@ -1,25 +1,41 @@
+"""Create the configured development database when invoked explicitly."""
+
+import os
+import re
+import sys
+
 import pymysql
 
-# --- 配置区 ---
-MYSQL_PASSWORD = 'lidagezuishuai66'  # <--- 【必改】这里填你刚才测试成功的那个正确密码！
-# ----------------
 
-print("正在连接 MySQL...")
-try:
-    # 连接到 MySQL 服务（不指定数据库）
-    conn = pymysql.connect(
-        host='127.0.0.1',
-        user='root',
-        password=MYSQL_PASSWORD
-    )
-    cursor = conn.cursor()
+def main():
+    password = os.environ.get("DB_PASSWORD")
+    if not password:
+        print("Set DB_PASSWORD before creating the database.", file=sys.stderr)
+        return 1
+    database = os.environ.get("DB_NAME", "my_blog_db")
+    if not re.fullmatch(r"[A-Za-z0-9_]+", database):
+        print("DB_NAME may contain only letters, numbers and underscores.", file=sys.stderr)
+        return 1
+    try:
+        connection = pymysql.connect(
+            host=os.environ.get("DB_HOST", "127.0.0.1"),
+            port=int(os.environ.get("DB_PORT", "3306")),
+            user=os.environ.get("DB_USER", "myblog"),
+            password=password,
+            charset="utf8mb4",
+        )
+        with connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    f"CREATE DATABASE IF NOT EXISTS `{database}` "
+                    "CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+                )
+        print("Database is ready.")
+        return 0
+    except (pymysql.MySQLError, ValueError) as error:
+        print(f"Database setup failed ({type(error).__name__}); check the local MySQL configuration.", file=sys.stderr)
+        return 1
 
-    # 创建数据库
-    print("正在创建数据库 my_blog_db ...")
-    cursor.execute("CREATE DATABASE IF NOT EXISTS my_blog_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;")
 
-    print("✅ 成功！数据库已创建。")
-    conn.close()
-
-except Exception as e:
-    print(f"❌ 出错了: {e}")
+if __name__ == "__main__":
+    raise SystemExit(main())

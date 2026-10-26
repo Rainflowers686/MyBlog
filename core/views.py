@@ -247,6 +247,8 @@ def author_detail(request, pk):
 # ... (上面的代码保持不变) ...
 
 # 👇 底部新增：演示专用重置密码视图 👇
+from django.conf import settings
+from django.urls import reverse_lazy
 from django.contrib.auth.views import PasswordResetView
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
@@ -257,9 +259,14 @@ from django.contrib.auth import get_user_model
 # ... 保持上面的 imports 不变 ...
 
 class DemoPasswordResetView(PasswordResetView):
+    success_url = reverse_lazy("account_reset_password_done")
+    email_template_name = "account/password_reset_email.txt"
+    subject_template_name = "account/password_reset_subject.txt"
     template_name = 'account/password_reset.html'
 
     def form_valid(self, form):
+        if not (settings.DEBUG and settings.MYBLOG_DEMO_PASSWORD_RESET):
+            return super().form_valid(form)
         # 1. 正常发邮件 (保持流程完整)
         opts = {
             'use_https': self.request.is_secure(),

@@ -1,12 +1,23 @@
 import os
 from pathlib import Path
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # 生产环境请修改密钥
-SECRET_KEY = 'django-insecure-dynamic-sky-blue-theme-key'
-DEBUG = True
-ALLOWED_HOSTS = []
+def required_env(name):
+    value = os.environ.get(name)
+    if not value:
+        raise ImproperlyConfigured(f"Set the {name} environment variable before starting MyBlog.")
+    return value
+
+
+SECRET_KEY = required_env("DJANGO_SECRET_KEY")
+if len(SECRET_KEY) < 50 or SECRET_KEY.startswith("django-insecure-"):
+    raise ImproperlyConfigured("Generate a new DJANGO_SECRET_KEY with at least 50 characters.")
+DEBUG = os.environ.get("DJANGO_DEBUG", "0").lower() in {"1", "true", "yes"}
+MYBLOG_DEMO_PASSWORD_RESET = DEBUG and os.environ.get("MYBLOG_DEMO_PASSWORD_RESET", "0") == "1"
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",") if host.strip()]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -68,11 +79,11 @@ WSGI_APPLICATION = 'myblog.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'my_blog_db',
-        'USER': 'root',
-        'PASSWORD': 'lidagezuishuai66',  # <--- 【必改】这里一定要填你 MySQL 的真实密码
-        'HOST': '127.0.0.1',
-        'PORT': '3306',
+        'NAME': os.environ.get('DB_NAME', 'my_blog_db'),
+        'USER': os.environ.get('DB_USER', 'myblog'),
+        'PASSWORD': required_env('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', '127.0.0.1'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
     }
 }
 
@@ -128,10 +139,13 @@ CKEDITOR_CONFIGS = {
 
 # --- 邮件配置 (开发模式) ---
 # 将邮件打印到终端，而不是真的发送 (防止报错)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-EMAIL_HOST = 'localhost'
-EMAIL_PORT = 1025
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
-EMAIL_USE_TLS = False
-DEFAULT_FROM_EMAIL = 'Webmaster <webmaster@localhost>'
+EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "1025"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "0").lower() in {"1", "true", "yes"}
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Webmaster <webmaster@localhost>")
+
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend" and EMAIL_HOST_USER and not EMAIL_HOST_PASSWORD:
+    raise ImproperlyConfigured("Set EMAIL_HOST_PASSWORD for the configured SMTP account.")
